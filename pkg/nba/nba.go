@@ -44,14 +44,15 @@ func httpGet(url string) (datas map[string]interface{}) {
 func Standings() (data string) {
 	standingURL := staticBaseURL + "/leaguestandingsv3"
 	params := url.Values{}
-	params.Set("GroupBy", viper.GetString("groupby"))
+	groupBy := viper.GetString("groupby")
+	params.Set("GroupBy", groupBy)
 	params.Set("LeagueID", "00")
 	params.Set("Season", viper.GetString("season"))
 	params.Set("SeasonType", "Regular Season")
 	params.Set("Section", "overall")
 	standingURL = standingURL + "?" + params.Encode()
 	datas := httpGet(standingURL)
-	o := outputStandings{datas: datas}
+	o := outputStandings{datas: datas, groupBy: groupBy}
 	o.print()
 	return
 }
