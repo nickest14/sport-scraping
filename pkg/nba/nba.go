@@ -52,7 +52,28 @@ func Standings() (data string) {
 	params.Set("Section", "overall")
 	standingURL = standingURL + "?" + params.Encode()
 	datas := httpGet(standingURL)
-	o := outputStandings{datas: datas, groupBy: groupBy}
+	o := outputStandings{
+		datas: datas, groupBy: groupBy,
+		header:      []any{"TEAM", "W-L", "WIN%", "GB", "STREAK"},
+		rowTemplate: "%13v %8v %8v %8v %8v",
+	}
+	o.print()
+	return
+}
+
+func Schedule() (data string) {
+	scheduleURL := staticBaseURL + "scoreboardv3"
+	params := url.Values{}
+	date := viper.GetString("date")
+	params.Set("GameDate", date)
+	params.Set("LeagueID", "00")
+	scheduleURL = scheduleURL + "?" + params.Encode()
+	datas := httpGet(scheduleURL)
+	o := outputSchedule{
+		datas:       datas,
+		header:      []any{"Date time", "Away W-L", "Away", "Score", "Home", "Home W-L"},
+		rowTemplate: "%21v %9v %13v %10v %13v %9v",
+	}
 	o.print()
 	return
 }

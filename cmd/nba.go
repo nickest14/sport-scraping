@@ -2,13 +2,14 @@ package cmd
 
 import (
 	"sport-scraping/pkg/nba"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-var groupby, season string
+var groupby, season, date string
 
 var nbaCmd = &cobra.Command{
 	Use:   "nba",
@@ -47,8 +48,32 @@ func standingsInit() (cmd *cobra.Command) {
 	return standingsCmd
 }
 
+func ScheduleInit() (cmd *cobra.Command) {
+	var scheduleCmd = &cobra.Command{
+		Use:   "schedule",
+		Short: "Get NBA schedule",
+		Long:  `Get NBA schedule`,
+		Args:  cobra.MinimumNArgs(0),
+		Run: func(cmd *cobra.Command, args []string) {
+			nba.Schedule()
+		},
+	}
+	scheduleCmd.Flags().StringVar(
+		&date,
+		"date",
+		time.Now().Format("2006-01-02"),
+		"America Game date, ex: 2023-01-01")
+	err := viper.BindPFlag("date", scheduleCmd.Flags().Lookup("date"))
+	if err != nil {
+		logrus.Fatal("Unable to bind game date flag")
+	}
+	return scheduleCmd
+}
+
 func init() {
 	rootCmd.AddCommand(nbaCmd)
 	standingsCmd := standingsInit()
+	ScheduleCmd := ScheduleInit()
 	nbaCmd.AddCommand(standingsCmd)
+	nbaCmd.AddCommand(ScheduleCmd)
 }
