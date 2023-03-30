@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"sport-scraping/pkg/nba"
 	"time"
 
@@ -10,6 +11,46 @@ import (
 )
 
 var groupby, season, date string
+
+func GetTeamID(team string) (string, error) {
+	var teamMapping = map[string]string{
+		"hawks":        "1610612737",
+		"celtics":      "1610612738",
+		"cavaliers":    "1610612739",
+		"pelicans":     "1610612740",
+		"bulls":        "1610612741",
+		"mavericks":    "1610612742",
+		"nuggets":      "1610612743",
+		"warriors":     "1610612744",
+		"rockets":      "1610612745",
+		"clippers":     "1610612746",
+		"lakers":       "1610612747",
+		"heat":         "1610612748",
+		"bucks":        "1610612749",
+		"timberwolves": "1610612750",
+		"nets":         "1610612751",
+		"knicks":       "1610612752",
+		"magic":        "1610612753",
+		"pacers":       "1610612754",
+		"sixers":       "1610612755",
+		"suns":         "1610612756",
+		"blazers":      "1610612757",
+		"kings":        "1610612758",
+		"spurs":        "1610612759",
+		"thunder":      "1610612760",
+		"raptors":      "1610612761",
+		"jazz":         "1610612762",
+		"grizzlies":    "1610612763",
+		"wizards":      "1610612764",
+		"pistons":      "1610612765",
+		"hornets":      "1610612766",
+	}
+	if id, ok := teamMapping[team]; ok {
+		return id, nil
+	} else {
+		return "", fmt.Errorf("%s team not found", team)
+	}
+}
 
 var nbaCmd = &cobra.Command{
 	Use:   "nba",
@@ -70,10 +111,29 @@ func ScheduleInit() (cmd *cobra.Command) {
 	return scheduleCmd
 }
 
+func TeamScheduleInit() (cmd *cobra.Command) {
+	var teamScheduleCmd = &cobra.Command{
+		Use:   "team",
+		Short: "Get team schedule",
+		Long:  `Get NBA schedule with specific team`,
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			id, err := GetTeamID(args[0])
+			if err != nil {
+				logrus.Fatal("Arguments to `team` must be one of team, ex: warriors")
+			}
+			nba.TeamCchedule(id)
+		},
+	}
+	return teamScheduleCmd
+}
+
 func init() {
 	rootCmd.AddCommand(nbaCmd)
 	standingsCmd := standingsInit()
 	ScheduleCmd := ScheduleInit()
+	TeamScheduleCmd := TeamScheduleInit()
 	nbaCmd.AddCommand(standingsCmd)
 	nbaCmd.AddCommand(ScheduleCmd)
+	ScheduleCmd.AddCommand(TeamScheduleCmd)
 }

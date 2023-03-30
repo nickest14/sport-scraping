@@ -3,6 +3,7 @@ module sport-scraping
 go 1.19
 
 require (
+	github.com/coreos/etcd v3.3.27+incompatible // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect

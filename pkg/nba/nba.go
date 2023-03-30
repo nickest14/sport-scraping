@@ -41,7 +41,7 @@ func httpGet(url string) (datas map[string]interface{}) {
 	return datas
 }
 
-func Standings() (data string) {
+func Standings() {
 	standingURL := staticBaseURL + "/leaguestandingsv3"
 	params := url.Values{}
 	groupBy := viper.GetString("groupby")
@@ -61,7 +61,7 @@ func Standings() (data string) {
 	return
 }
 
-func Schedule() (data string) {
+func Schedule() {
 	scheduleURL := staticBaseURL + "scoreboardv3"
 	params := url.Values{}
 	date := viper.GetString("date")
@@ -76,4 +76,9 @@ func Schedule() (data string) {
 	}
 	o.print()
 	return
+}
+
+func TeamCchedule(team string) (data string) {
+	// TODO: finish the get schedule logic
+	return ""
 }
