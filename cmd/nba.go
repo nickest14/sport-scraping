@@ -1,19 +1,18 @@
 package cmd
 
 import (
-	"fmt"
 	"sport-scraping/pkg/nba"
 	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/vishalkuo/bimap"
 )
 
-var groupby, season, date string
-
-func GetTeamID(team string) (string, error) {
+func initTeamMap() *bimap.BiMap[string, string] {
 	var teamMapping = map[string]string{
+		// team map to team id
 		"hawks":        "1610612737",
 		"celtics":      "1610612738",
 		"cavaliers":    "1610612739",
@@ -45,11 +44,7 @@ func GetTeamID(team string) (string, error) {
 		"pistons":      "1610612765",
 		"hornets":      "1610612766",
 	}
-	if id, ok := teamMapping[team]; ok {
-		return id, nil
-	} else {
-		return "", fmt.Errorf("%s team not found", team)
-	}
+	return bimap.NewBiMapFromMap(teamMapping)
 }
 
 var nbaCmd = &cobra.Command{
@@ -59,6 +54,7 @@ var nbaCmd = &cobra.Command{
 }
 
 func standingsInit() (cmd *cobra.Command) {
+	var groupby, season string
 	var standingsCmd = &cobra.Command{
 		Use:   "standings",
 		Short: "Get NBA standings",
@@ -90,6 +86,7 @@ func standingsInit() (cmd *cobra.Command) {
 }
 
 func ScheduleInit() (cmd *cobra.Command) {
+	var date string
 	var scheduleCmd = &cobra.Command{
 		Use:   "schedule",
 		Short: "Get NBA schedule",
@@ -112,18 +109,52 @@ func ScheduleInit() (cmd *cobra.Command) {
 }
 
 func TeamScheduleInit() (cmd *cobra.Command) {
+	var year, display string
+	var count int
+
 	var teamScheduleCmd = &cobra.Command{
 		Use:   "team",
 		Short: "Get team schedule",
 		Long:  `Get NBA schedule with specific team`,
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			id, err := GetTeamID(args[0])
-			if err != nil {
+			team := args[0]
+			teamMap := initTeamMap()
+			_, ok := teamMap.Get(team)
+			if !ok {
 				logrus.Fatal("Arguments to `team` must be one of team, ex: warriors")
 			}
-			nba.TeamCchedule(id)
+			nba.TeamSchedule(team, teamMap)
 		},
+	}
+	teamScheduleCmd.Flags().StringVar(
+		&year,
+		"year",
+		"2022",
+		"Season year, ex: 2022")
+	err := viper.BindPFlag("year", teamScheduleCmd.Flags().Lookup("year"))
+	if err != nil {
+		logrus.Fatal("Unable to bind year flag")
+	}
+
+	teamScheduleCmd.Flags().StringVar(
+		&display,
+		"display",
+		"upcoming",
+		"Display the upcoming or path schedule")
+	err = viper.BindPFlag("display", teamScheduleCmd.Flags().Lookup("display"))
+	if err != nil {
+		logrus.Fatal("Unable to bind display")
+	}
+
+	teamScheduleCmd.Flags().IntVar(
+		&count,
+		"count",
+		10,
+		"How many games will be displayed")
+	err = viper.BindPFlag("count", teamScheduleCmd.Flags().Lookup("count"))
+	if err != nil {
+		logrus.Fatal("Unable to bind count")
 	}
 	return teamScheduleCmd
 }
