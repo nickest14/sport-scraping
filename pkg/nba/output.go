@@ -5,6 +5,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
+	"github.com/vishalkuo/bimap"
 )
 
 type wrappedBuilder struct {
@@ -23,25 +26,37 @@ func (w *wrappedBuilder) PrintList(datas []string) {
 }
 
 type output interface {
-	print()
+	Print()
+}
+
+type outputStruct struct {
+	wrap        wrappedBuilder
+	header      []any
+	rowTemplate string
+	datas       map[string]interface{}
 }
 
 type outputStandings struct {
-	wrap        wrappedBuilder
-	header      []any
-	rowTemplate string
-	datas       map[string]interface{}
-	groupBy     string
+	outputStruct
+	groupBy string
 }
 
 type outputSchedule struct {
-	wrap        wrappedBuilder
-	header      []any
-	rowTemplate string
-	datas       map[string]interface{}
+	outputStruct
 }
 
-func (o outputStandings) print() {
+type outputTeamSchedule struct {
+	outputStruct
+	team    string
+	teamMap *bimap.BiMap[string, string]
+	display string
+	count   int
+}
+
+func (o outputStandings) Print() {
+	/*
+		Display the NBA standings info
+	*/
 	results := o.datas["resultSets"].([]interface{})[0].(map[string]interface{})
 	rowSets := results["rowSet"].([]interface{})
 
@@ -60,7 +75,6 @@ func (o outputStandings) print() {
 		groupData[g] = append(groupData[g], row)
 	}
 
-	// header := fmt.Sprintf(rowTemplate, "TEAM", "W-L", "WIN%", "GB", "STREAK")
 	header := fmt.Sprintf(o.rowTemplate, o.header...)
 	for k, v := range groupData {
 		o.wrap.Printf(k + " " + o.groupBy + "\n" + header)
@@ -69,10 +83,12 @@ func (o outputStandings) print() {
 	fmt.Println(o.wrap.String())
 }
 
-func (o outputSchedule) print() {
+func (o outputSchedule) Print() {
+	/*
+		Display the schedule with specific date
+	*/
 	games := o.datas["scoreboard"].(map[string]interface{})["games"].([]interface{})
-	timeFormat := "2006-01-02 15:04 Mon"
-	loc, _ := time.LoadLocation("Asia/Taipei")
+	loc, _ := time.LoadLocation(location)
 
 	var rows []string
 	for _, game := range games {
@@ -95,6 +111,86 @@ func (o outputSchedule) print() {
 
 	header := fmt.Sprintf(o.rowTemplate, o.header...)
 	o.wrap.Printf(header)
+	o.wrap.PrintList(rows)
+	fmt.Println(o.wrap.String())
+}
+
+func reverseSlice(s []string) {
+	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
+		s[i], s[j] = s[j], s[i]
+	}
+}
+
+func (o outputTeamSchedule) Print() {
+	/*
+		Display the upcoming schedule or path schedule for the indicated team.
+	*/
+	teamID, _ := o.teamMap.Get(o.team)
+	gcsd := o.datas["data"].(map[string]interface{})["gscd"].(map[string]interface{})
+	games := gcsd["g"].([]interface{})
+	var score string
+	var rows []string
+	for _, game := range games {
+		var WL string
+		var teamScore, oppScore int
+		game := game.(map[string]interface{})
+		stt := game["stt"]
+		if o.display == "upcoming" && stt != "Final" || o.display == "path" && stt == "Final" {
+			gameID := game["gid"].(string)
+			home := game["h"].(map[string]interface{})
+			homeTeamID := strconv.FormatFloat(home["tid"].(float64), 'f', -1, 64)
+			homeTeam, _ := o.teamMap.GetInverse(homeTeamID)
+			homeScore := home["s"]
+
+			away := game["v"].(map[string]interface{})
+			awayTeamID := strconv.FormatFloat(away["tid"].(float64), 'f', -1, 64)
+			awayTeam, _ := o.teamMap.GetInverse(awayTeamID)
+			awayScore := away["s"]
+			if homeScore == "" {
+				score = "   -   "
+			} else {
+				score = awayScore.(string) + ":" + homeScore.(string)
+			}
+
+			if teamID == homeTeamID {
+				teamScore, _ = strconv.Atoi(homeScore.(string))
+				oppScore, _ = strconv.Atoi(awayScore.(string))
+
+			} else if teamID == awayTeamID {
+				teamScore, _ = strconv.Atoi(awayScore.(string))
+				oppScore, _ = strconv.Atoi(homeScore.(string))
+			} else {
+				logrus.Error("Can not match select tem with team id")
+			}
+			if stt == "Final" {
+				if teamScore > oppScore {
+					WL = "W"
+				} else {
+					WL = "L"
+				}
+			} else {
+				WL = " - "
+			}
+
+			utcTime := game["gdtutc"].(string) + " " + game["utctm"].(string)
+			loc, _ := time.LoadLocation(location)
+			t, _ := time.Parse("2006-01-02 15:04", utcTime)
+			localTime := t.In(loc).Format(timeFormat)
+			st := game["seasonType"].(string)
+
+			row := fmt.Sprintf(o.rowTemplate, st, localTime, gameID, WL, awayTeam, score, homeTeam)
+			rows = append(rows, row)
+		}
+	}
+	if o.display == "path" {
+		// Display from the closest game.
+		reverseSlice(rows)
+	}
+	if len(rows) > o.count {
+		rows = rows[:o.count]
+	}
+	header := fmt.Sprintf(o.rowTemplate, o.header...)
+	o.wrap.Printf("Display " + o.display + " " + strconv.Itoa(o.count) + " games" + "\n" + header)
 	o.wrap.PrintList(rows)
 	fmt.Println(o.wrap.String())
 }
