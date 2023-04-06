@@ -78,8 +78,8 @@ func Schedule() {
 	datas := httpGet(scheduleURL)
 	o := outputSchedule{
 		outputStruct: outputStruct{
-			header:      []any{"Date time", "Away W-L", "Away", "Score", "Home", "Home W-L"},
-			rowTemplate: "%21v %9v %13v %10v %13v %9v",
+			header:      []any{"Date time", "Game id", "Away W-L", "Away", "Score", "Home", "Home W-L"},
+			rowTemplate: "%21v %11v %9v %13v %8v %13v %9v",
 			datas:       datas,
 		},
 	}

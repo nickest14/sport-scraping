@@ -93,7 +93,7 @@ func (o outputSchedule) Print() {
 	var rows []string
 	for _, game := range games {
 		game := game.(map[string]interface{})
-
+		gameID := game["gameId"].(string)
 		home := game["homeTeam"].(map[string]interface{})
 		homeTeam, homeScore := home["teamSlug"], home["score"].(float64)
 		homeStandings := strconv.FormatFloat(home["wins"].(float64), 'f', -1, 64) + "-" + strconv.FormatFloat(home["losses"].(float64), 'f', -1, 64)
@@ -105,7 +105,7 @@ func (o outputSchedule) Print() {
 		score := strconv.FormatFloat(awayScore, 'f', -1, 64) + ":" + strconv.FormatFloat(homeScore, 'f', -1, 64)
 		t, _ := time.Parse(time.RFC3339, game["gameTimeUTC"].(string))
 		localTime := t.In(loc).Format(timeFormat)
-		row := fmt.Sprintf(o.rowTemplate, localTime, awayStandings, awayTeam, score, homeTeam, homeStandings)
+		row := fmt.Sprintf(o.rowTemplate, localTime, gameID, awayStandings, awayTeam, score, homeTeam, homeStandings)
 		rows = append(rows, row)
 	}
 
