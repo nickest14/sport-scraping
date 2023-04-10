@@ -85,7 +85,7 @@ func standingsInit() (cmd *cobra.Command) {
 	return standingsCmd
 }
 
-func ScheduleInit() (cmd *cobra.Command) {
+func scheduleInit() (cmd *cobra.Command) {
 	var date string
 	var scheduleCmd = &cobra.Command{
 		Use:   "schedule",
@@ -108,12 +108,12 @@ func ScheduleInit() (cmd *cobra.Command) {
 	return scheduleCmd
 }
 
-func TeamScheduleInit() (cmd *cobra.Command) {
+func teamScheduleInit() (cmd *cobra.Command) {
 	var year, display string
 	var count int
 
 	var teamScheduleCmd = &cobra.Command{
-		Use:   "team",
+		Use:   "team [specific game]",
 		Short: "Get team schedule",
 		Long:  `Get NBA schedule with specific team`,
 		Args:  cobra.ExactArgs(1),
@@ -159,12 +159,39 @@ func TeamScheduleInit() (cmd *cobra.Command) {
 	return teamScheduleCmd
 }
 
+func playBYPlayInit() (cmd *cobra.Command) {
+	var count int
+
+	var pbpCmd = &cobra.Command{
+		Use:   "pbp [game id]",
+		Short: "Get NBA play by play details",
+		Long:  `Get NBA play by play details with specific game`,
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			gameID := args[0]
+			nba.PlayBYPlay(gameID)
+		},
+	}
+	pbpCmd.Flags().IntVar(
+		&count,
+		"count",
+		10,
+		"How many game play infos will be displayed in initial")
+	err := viper.BindPFlag("count", pbpCmd.Flags().Lookup("count"))
+	if err != nil {
+		logrus.Fatal("Unable to bind count")
+	}
+	return pbpCmd
+}
+
 func init() {
 	rootCmd.AddCommand(nbaCmd)
 	standingsCmd := standingsInit()
-	ScheduleCmd := ScheduleInit()
-	TeamScheduleCmd := TeamScheduleInit()
+	scheduleCmd := scheduleInit()
+	teamScheduleCmd := teamScheduleInit()
+	pbpCmd := playBYPlayInit()
 	nbaCmd.AddCommand(standingsCmd)
-	nbaCmd.AddCommand(ScheduleCmd)
-	ScheduleCmd.AddCommand(TeamScheduleCmd)
+	nbaCmd.AddCommand(scheduleCmd)
+	scheduleCmd.AddCommand(teamScheduleCmd)
+	nbaCmd.AddCommand(pbpCmd)
 }

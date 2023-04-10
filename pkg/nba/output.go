@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/sirupsen/logrus"
 	"github.com/vishalkuo/bimap"
 )
@@ -51,6 +52,11 @@ type outputTeamSchedule struct {
 	teamMap *bimap.BiMap[string, string]
 	display string
 	count   int
+}
+
+type outputPlayBYPlay struct {
+	outputStruct
+	count int
 }
 
 func (o outputStandings) Print() {
@@ -191,6 +197,72 @@ func (o outputTeamSchedule) Print() {
 	}
 	header := fmt.Sprintf(o.rowTemplate, o.header...)
 	o.wrap.Printf("Display " + o.display + " " + strconv.Itoa(o.count) + " games" + "\n" + header)
+	o.wrap.PrintList(rows)
+	fmt.Println(o.wrap.String())
+}
+
+func (o outputPlayBYPlay) Print() {
+	actions := o.datas["game"].(map[string]interface{})["actions"].([]interface{})
+	FgYellow := color.New(color.Bold, color.FgYellow).SprintFunc()
+	FgCyan := color.New(color.Bold, color.FgHiCyan).SprintFunc()
+	FgMagenta := color.New(color.FgMagenta).SprintFunc()
+	FgRed := color.New(color.Bold, color.FgRed).SprintFunc()
+	FgWhite := color.New(color.Bold, color.FgWhite).SprintFunc()
+	var rows []string
+	for _, action := range actions[:] {
+		action := action.(map[string]interface{})
+		parts := strings.Split(action["clock"].(string), "M")
+		min := parts[0][2:]
+		sec := parts[1][:2]
+		clock := fmt.Sprintf("%86s:%-10s", "Q"+strconv.FormatFloat(action["period"].(float64), 'f', 0, 64)+"  "+min, sec)
+		rows = append(rows, clock)
+		var team string
+		value, ok := action["teamTricode"]
+		if ok {
+			team = fmt.Sprintf("[%s]: ", value.(string))
+		} else {
+			team = ""
+		}
+		des := team + action["description"].(string)
+
+		awayScore := action["scoreAway"].(string)
+		homeScore := action["scoreHome"].(string)
+		side := action["side"]
+		shotResult, ok := action["shotResult"]
+		var row string
+		if side != nil {
+			var awayDes, homeDes string
+			if side == "left" { // away
+				awayDes = FgYellow(des)
+				homeDes = FgYellow("")
+				if ok && shotResult == "Made" {
+					awayScore = FgRed(awayScore)
+					homeScore = FgWhite(homeScore)
+				}
+			} else { // home
+				awayDes = FgCyan("")
+				homeDes = FgCyan(des)
+				if ok && shotResult == "Made" {
+					awayScore = FgWhite(awayScore)
+					homeScore = FgRed(homeScore)
+				}
+			}
+			if ok && shotResult == "Made" {
+				row = fmt.Sprintf("%91v %16v:%-16v %-91v\n", awayDes, awayScore, homeScore, homeDes)
+			} else {
+				row = fmt.Sprintf("%91v %5v:%-5v %-91v\n", awayDes, awayScore, homeScore, homeDes)
+			}
+		} else {
+			des = FgMagenta(des)
+			if ok && shotResult == "Made" {
+				row = fmt.Sprintf("%89s %5v:%-5v\n", des, awayScore, homeScore)
+			} else {
+				row = fmt.Sprintf("%89s\n", des)
+			}
+		}
+		rows = append(rows, row)
+	}
+
 	o.wrap.PrintList(rows)
 	fmt.Println(o.wrap.String())
 }
