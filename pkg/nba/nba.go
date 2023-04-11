@@ -2,7 +2,6 @@ package nba
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -107,8 +106,13 @@ func TeamSchedule(team string, teamMap *bimap.BiMap[string, string]) {
 }
 
 func PlayBYPlay(gameID string) {
+	boxURL := cdnBaseURL + "/json/liveData/boxscore/boxscore_" + gameID + ".json"
+	boxDatas := httpGet(boxURL)
+	game := boxDatas["game"].(map[string]interface{})
+	awayTeam := game["awayTeam"].(map[string]interface{})["teamTricode"].(string)
+	homeTeam := game["homeTeam"].(map[string]interface{})["teamTricode"].(string)
+
 	pbpURL := cdnBaseURL + "/json/liveData/playbyplay/playbyplay_" + gameID + ".json"
-	fmt.Println(pbpURL)
 	datas := httpGet(pbpURL)
 	var o output = outputPlayBYPlay{
 		outputStruct: outputStruct{
@@ -116,7 +120,9 @@ func PlayBYPlay(gameID string) {
 			rowTemplate: "%80v %2v %80v",
 			datas:       datas,
 		},
-		count: viper.GetInt("count"),
+		count:    viper.GetInt("count"),
+		awayTeam: awayTeam,
+		homeTeam: homeTeam,
 	}
 	o.Print()
 }
