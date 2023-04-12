@@ -69,7 +69,7 @@ func Standings() {
 }
 
 func Schedule() {
-	scheduleURL := staticBaseURL + "scoreboardv3"
+	scheduleURL := staticBaseURL + "/scoreboardv3"
 	params := url.Values{}
 	date := viper.GetString("date")
 	params.Set("GameDate", date)

@@ -66,19 +66,36 @@ func (o outputStandings) Print() {
 		Display the NBA standings info
 	*/
 	results := o.datas["resultSets"].([]interface{})[0].(map[string]interface{})
+	headers := results["headers"].([]interface{})
 	rowSets := results["rowSet"].([]interface{})
+	headerInd := map[string]int{
+		"TeamSlug":            -1,
+		"Record":              -1,
+		"WinPCT":              -1,
+		"ConferenceGamesBack": -1,
+		"strCurrentStreak":    -1,
+		"Conference":          -1,
+		"Division":            -1,
+	}
 
+	for ind, val := range headers {
+		v := val.(string)
+		_, ok := headerInd[v]
+		if ok {
+			headerInd[v] = ind
+		}
+	}
 	groupData := make(map[string][]string)
 	var groupInd int
 	if o.groupBy == "conf" {
-		groupInd = 6
+		groupInd = headerInd["Conference"]
 	} else {
-		groupInd = 10
+		groupInd = headerInd["Division"]
 	}
 
 	for _, rowSet := range rowSets {
 		rowSet := rowSet.([]interface{})
-		row := fmt.Sprintf(o.rowTemplate, rowSet[5], rowSet[7], rowSet[15], rowSet[38], rowSet[27])
+		row := fmt.Sprintf(o.rowTemplate, rowSet[headerInd["TeamSlug"]], rowSet[headerInd["Record"]], rowSet[headerInd["WinPCT"]], rowSet[headerInd["ConferenceGamesBack"]], rowSet[headerInd["strCurrentStreak"]])
 		g := rowSet[groupInd].(string)
 		groupData[g] = append(groupData[g], row)
 	}
@@ -209,7 +226,7 @@ func (o outputPlayBYPlay) Print() {
 	FgCyan := color.New(color.Bold, color.FgHiCyan).SprintFunc()
 	FgMagenta := color.New(color.FgMagenta).SprintFunc()
 	FgRed := color.New(color.Bold, color.FgRed).SprintFunc()
-	FgWhite := color.New(color.Bold, color.FgBlack).SprintFunc()
+	FgBlack := color.New(color.Bold, color.FgBlack).SprintFunc()
 
 	length := len(actions)
 	if o.count > length {
@@ -240,13 +257,13 @@ func (o outputPlayBYPlay) Print() {
 				homeDes = FgYellow("")
 				if shotOK && shotResult == "Made" {
 					awayScore = FgRed(awayScore)
-					homeScore = FgWhite(homeScore)
+					homeScore = FgBlack(homeScore)
 				}
 			} else { // home
 				awayDes = FgCyan("")
 				homeDes = FgCyan(des)
 				if shotOK && shotResult == "Made" {
-					awayScore = FgWhite(awayScore)
+					awayScore = FgBlack(awayScore)
 					homeScore = FgRed(homeScore)
 				}
 			}
