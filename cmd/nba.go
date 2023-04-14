@@ -69,19 +69,14 @@ func standingsInit() (cmd *cobra.Command) {
 		"groupby",
 		"conf",
 		"groupby parameter: conf or div")
-	err := viper.BindPFlag("groupby", standingsCmd.Flags().Lookup("groupby"))
-	if err != nil {
-		logrus.Fatal("Unable to bind groupby flag")
-	}
+	viper.BindPFlag("groupby", standingsCmd.Flags().Lookup("groupby"))
+
 	standingsCmd.Flags().StringVar(
 		&season,
 		"season",
 		"2022-23",
 		"season year")
-	err = viper.BindPFlag("season", standingsCmd.Flags().Lookup("season"))
-	if err != nil {
-		logrus.Fatal("Unable to bind groupby flag")
-	}
+	viper.BindPFlag("season", standingsCmd.Flags().Lookup("season"))
 	return standingsCmd
 }
 
@@ -101,10 +96,7 @@ func scheduleInit() (cmd *cobra.Command) {
 		"date",
 		time.Now().Format("2006-01-02"),
 		"America Game date, ex: 2023-01-01")
-	err := viper.BindPFlag("date", scheduleCmd.Flags().Lookup("date"))
-	if err != nil {
-		logrus.Fatal("Unable to bind game date flag")
-	}
+	viper.BindPFlag("date", scheduleCmd.Flags().Lookup("date"))
 	return scheduleCmd
 }
 
@@ -132,42 +124,37 @@ func teamScheduleInit() (cmd *cobra.Command) {
 		"year",
 		"2022",
 		"Season year, ex: 2022")
-	err := viper.BindPFlag("year", teamScheduleCmd.Flags().Lookup("year"))
-	if err != nil {
-		logrus.Fatal("Unable to bind year flag")
-	}
+	viper.BindPFlag("year", teamScheduleCmd.Flags().Lookup("year"))
 
 	teamScheduleCmd.Flags().StringVar(
 		&display,
 		"display",
 		"upcoming",
 		"Display the upcoming or path schedule")
-	err = viper.BindPFlag("display", teamScheduleCmd.Flags().Lookup("display"))
-	if err != nil {
-		logrus.Fatal("Unable to bind display")
-	}
+	viper.BindPFlag("display", teamScheduleCmd.Flags().Lookup("display"))
 
 	teamScheduleCmd.Flags().IntVar(
 		&count,
 		"count",
 		10,
 		"How many games will be displayed")
-	err = viper.BindPFlag("count", teamScheduleCmd.Flags().Lookup("count"))
-	if err != nil {
-		logrus.Fatal("Unable to bind count")
-	}
+	viper.BindPFlag("count", teamScheduleCmd.Flags().Lookup("count"))
 	return teamScheduleCmd
 }
 
 func playBYPlayInit() (cmd *cobra.Command) {
-	var count int
+	var count, interval int
+	var streaming bool
 
 	var pbpCmd = &cobra.Command{
 		Use:   "pbp [game id]",
 		Short: "Get NBA play by play details",
 		Long:  `Get NBA play by play details with specific game`,
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
+			if interval < 3 || interval > 60 {
+				logrus.Fatal("intreval flag shoule be 3 ~ 60")
+			}
 			gameID := args[0]
 			nba.PlayBYPlay(gameID)
 		},
@@ -177,10 +164,22 @@ func playBYPlayInit() (cmd *cobra.Command) {
 		"count",
 		10,
 		"How many game play infos will be displayed in initial")
-	err := viper.BindPFlag("count", pbpCmd.Flags().Lookup("count"))
-	if err != nil {
-		logrus.Fatal("Unable to bind count")
-	}
+	viper.BindPFlag("count", pbpCmd.Flags().Lookup("count"))
+
+	pbpCmd.Flags().BoolVarP(
+		&streaming,
+		"streaming",
+		"s",
+		false,
+		"Streaming play-by-play information during live broadcasts of games")
+	viper.BindPFlag("streaming", pbpCmd.Flags().Lookup("streaming"))
+
+	pbpCmd.Flags().IntVar(
+		&interval,
+		"interval",
+		5,
+		"The interval for crawling the result, range is 3 ~ 60 seconds, default: 5")
+	viper.BindPFlag("interval", pbpCmd.Flags().Lookup("interval"))
 	return pbpCmd
 }
 

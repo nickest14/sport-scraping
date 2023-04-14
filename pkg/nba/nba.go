@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -57,8 +58,8 @@ func Standings() {
 	params.Set("Section", "overall")
 	standingURL = standingURL + "?" + params.Encode()
 	datas := httpGet(standingURL)
-	o := outputStandings{
-		outputStruct: outputStruct{
+	o := OutputStandings{
+		OutputStruct: OutputStruct{
 			header:      []any{"TEAM", "W-L", "WIN%", "GB", "STREAK"},
 			rowTemplate: "%13v %8v %8v %8v %8v",
 			datas:       datas,
@@ -76,8 +77,8 @@ func Schedule() {
 	params.Set("LeagueID", "00")
 	scheduleURL = scheduleURL + "?" + params.Encode()
 	datas := httpGet(scheduleURL)
-	o := outputSchedule{
-		outputStruct: outputStruct{
+	o := OutputSchedule{
+		OutputStruct: OutputStruct{
 			header:      []any{"Date time", "Game id", "Away W-L", "Away", "Score", "Home", "Home W-L"},
 			rowTemplate: "%21v %11v %9v %13v %8v %13v %9v",
 			datas:       datas,
@@ -91,8 +92,8 @@ func TeamSchedule(team string, teamMap *bimap.BiMap[string, string]) {
 
 	teamScheduleURL := dataBaseURL + "/v2022/json/mobile_teams/nba/" + year + "/teams/" + team + "_schedule.json"
 	datas := httpGet(teamScheduleURL)
-	var o output = outputTeamSchedule{
-		outputStruct: outputStruct{
+	var o Output = OutputTeamSchedule{
+		OutputStruct: OutputStruct{
 			header:      []any{"Type", "Date time", "Game id", "W-L", "Away", "Score", "Home"},
 			rowTemplate: "%9v %21v %11v %4s %12v %8v %12v",
 			datas:       datas,
@@ -114,15 +115,37 @@ func PlayBYPlay(gameID string) {
 
 	pbpURL := cdnBaseURL + "/json/liveData/playbyplay/playbyplay_" + gameID + ".json"
 	datas := httpGet(pbpURL)
-	var o output = outputPlayBYPlay{
-		outputStruct: outputStruct{
+	var o OutputPlayBYPlay = OutputPlayBYPlay{
+		OutputStruct: OutputStruct{
 			header:      []any{"Away", "Score", "Home"},
 			rowTemplate: "%80v %2v %80v",
 			datas:       datas,
 		},
 		count:    viper.GetInt("count"),
+		cursor:   0,
 		awayTeam: awayTeam,
 		homeTeam: homeTeam,
 	}
-	o.Print()
+
+	if viper.GetBool("streaming") {
+		interval := viper.GetInt("interval")
+		dataChan := make(chan map[string]interface{}, 1)
+		go func() {
+			for {
+				time.Sleep(time.Duration(interval) * time.Second)
+				datas := httpGet(pbpURL)
+				dataChan <- datas
+			}
+		}()
+		dataChan <- datas
+		for {
+			select {
+			case datas := <-dataChan:
+				o.OutputStruct.datas = datas
+				o.Print()
+			}
+		}
+	} else {
+		o.Print()
+	}
 }

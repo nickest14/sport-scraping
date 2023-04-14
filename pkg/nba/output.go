@@ -2,6 +2,7 @@ package nba
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -26,42 +27,43 @@ func (w *wrappedBuilder) PrintList(datas []string) {
 	w.WriteString("\n")
 }
 
-type output interface {
+type Output interface {
 	Print()
 }
 
-type outputStruct struct {
+type OutputStruct struct {
 	wrap        wrappedBuilder
 	header      []any
 	rowTemplate string
 	datas       map[string]interface{}
 }
 
-type outputStandings struct {
-	outputStruct
+type OutputStandings struct {
+	OutputStruct
 	groupBy string
 }
 
-type outputSchedule struct {
-	outputStruct
+type OutputSchedule struct {
+	OutputStruct
 }
 
-type outputTeamSchedule struct {
-	outputStruct
+type OutputTeamSchedule struct {
+	OutputStruct
 	team    string
 	teamMap *bimap.BiMap[string, string]
 	display string
 	count   int
 }
 
-type outputPlayBYPlay struct {
-	outputStruct
+type OutputPlayBYPlay struct {
+	OutputStruct
 	count    int
+	cursor   int
 	awayTeam string
 	homeTeam string
 }
 
-func (o outputStandings) Print() {
+func (o OutputStandings) Print() {
 	/*
 		Display the NBA standings info
 	*/
@@ -108,7 +110,7 @@ func (o outputStandings) Print() {
 	fmt.Println(o.wrap.String())
 }
 
-func (o outputSchedule) Print() {
+func (o OutputSchedule) Print() {
 	/*
 		Display the schedule with specific date
 	*/
@@ -146,7 +148,7 @@ func reverseSlice(s []string) {
 	}
 }
 
-func (o outputTeamSchedule) Print() {
+func (o OutputTeamSchedule) Print() {
 	/*
 		Display the upcoming schedule or path schedule for the indicated team.
 	*/
@@ -220,22 +222,26 @@ func (o outputTeamSchedule) Print() {
 	fmt.Println(o.wrap.String())
 }
 
-func (o outputPlayBYPlay) Print() {
-	actions := o.datas["game"].(map[string]interface{})["actions"].([]interface{})
+func (o *OutputPlayBYPlay) Print() {
 	FgYellow := color.New(color.Bold, color.FgYellow).SprintFunc()
 	FgCyan := color.New(color.Bold, color.FgHiCyan).SprintFunc()
 	FgMagenta := color.New(color.FgMagenta).SprintFunc()
 	FgRed := color.New(color.Bold, color.FgRed).SprintFunc()
 	FgBlack := color.New(color.Bold, color.FgBlack).SprintFunc()
 
+	var start int
+	actions := o.datas["game"].(map[string]interface{})["actions"].([]interface{})
 	length := len(actions)
-	if o.count > length {
-		o.count = length
+	if o.cursor >= length-1 {
+		return
 	}
-	var rows []string
 
-	for ind := length - o.count; ind <= length-1; ind++ {
-		action := actions[ind].(map[string]interface{})
+	start = length - int(math.Min(float64(o.count), float64(length)))
+	start = int(math.Max(float64(o.cursor), float64(start)))
+
+	var rows []string
+	for _, action := range actions[start:length] {
+		action := action.(map[string]interface{})
 		parts := strings.Split(action["clock"].(string), "M")
 		min := parts[0][2:]
 		sec := parts[1][:2]
@@ -278,7 +284,8 @@ func (o outputPlayBYPlay) Print() {
 		}
 		rows = append(rows, row)
 	}
-
 	o.wrap.PrintList(rows)
 	fmt.Println(o.wrap.String())
+	o.wrap.Reset()
+	o.cursor = length - 1
 }
