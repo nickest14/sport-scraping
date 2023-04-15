@@ -105,7 +105,7 @@ func teamScheduleInit() (cmd *cobra.Command) {
 	var count int
 
 	var teamScheduleCmd = &cobra.Command{
-		Use:   "team [specific game]",
+		Use:   "team [specific team]",
 		Short: "Get team schedule",
 		Long:  `Get NBA schedule with specific team`,
 		Args:  cobra.ExactArgs(1),
@@ -163,7 +163,7 @@ func playBYPlayInit() (cmd *cobra.Command) {
 		&count,
 		"count",
 		10,
-		"How many game play infos will be displayed in initial")
+		"How many pieces of play-by-play game information will be displayed initially")
 	viper.BindPFlag("pbpCount", pbpCmd.Flags().Lookup("count"))
 
 	pbpCmd.Flags().BoolVarP(
