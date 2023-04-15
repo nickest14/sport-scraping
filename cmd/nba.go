@@ -138,7 +138,7 @@ func teamScheduleInit() (cmd *cobra.Command) {
 		"count",
 		10,
 		"How many games will be displayed")
-	viper.BindPFlag("count", teamScheduleCmd.Flags().Lookup("count"))
+	viper.BindPFlag("tsCount", teamScheduleCmd.Flags().Lookup("count"))
 	return teamScheduleCmd
 }
 
@@ -164,7 +164,7 @@ func playBYPlayInit() (cmd *cobra.Command) {
 		"count",
 		10,
 		"How many game play infos will be displayed in initial")
-	viper.BindPFlag("count", pbpCmd.Flags().Lookup("count"))
+	viper.BindPFlag("pbpCount", pbpCmd.Flags().Lookup("count"))
 
 	pbpCmd.Flags().BoolVarP(
 		&streaming,

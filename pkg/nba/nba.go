@@ -101,7 +101,7 @@ func TeamSchedule(team string, teamMap *bimap.BiMap[string, string]) {
 		team:    team,
 		teamMap: teamMap,
 		display: viper.GetString("display"),
-		count:   viper.GetInt("count"),
+		count:   viper.GetInt("tsCount"),
 	}
 	o.Print()
 }
@@ -121,7 +121,7 @@ func PlayBYPlay(gameID string) {
 			rowTemplate: "%80v %2v %80v",
 			datas:       datas,
 		},
-		count:    viper.GetInt("count"),
+		count:    viper.GetInt("pbpCount"),
 		cursor:   0,
 		awayTeam: awayTeam,
 		homeTeam: homeTeam,
