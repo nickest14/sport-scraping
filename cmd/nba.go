@@ -150,7 +150,7 @@ func playBYPlayInit() (cmd *cobra.Command) {
 		Use:   "pbp [game id]",
 		Short: "Get NBA play by play details",
 		Long:  `Get NBA play by play details with specific game`,
-		Args:  cobra.MaximumNArgs(2),
+		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			if interval < 3 || interval > 60 {
 				logrus.Fatal("intreval flag shoule be 3 ~ 60")
@@ -185,12 +185,9 @@ func playBYPlayInit() (cmd *cobra.Command) {
 
 func init() {
 	rootCmd.AddCommand(nbaCmd)
-	standingsCmd := standingsInit()
+	nbaCmd.AddCommand(standingsInit())
 	scheduleCmd := scheduleInit()
-	teamScheduleCmd := teamScheduleInit()
-	pbpCmd := playBYPlayInit()
-	nbaCmd.AddCommand(standingsCmd)
 	nbaCmd.AddCommand(scheduleCmd)
-	scheduleCmd.AddCommand(teamScheduleCmd)
-	nbaCmd.AddCommand(pbpCmd)
+	scheduleCmd.AddCommand(teamScheduleInit())
+	nbaCmd.AddCommand(playBYPlayInit())
 }
