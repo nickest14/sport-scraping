@@ -2,7 +2,6 @@ package nba
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -58,7 +57,6 @@ func Standings() {
 	params.Set("SeasonType", "Regular Season")
 	params.Set("Section", "overall")
 	standingURL = standingURL + "?" + params.Encode()
-	fmt.Println(standingURL)
 	datas := httpGet(standingURL)
 	o := OutputStandings{
 		OutputStruct: OutputStruct{

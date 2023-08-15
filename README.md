@@ -68,7 +68,7 @@ Show detailed play-by-play information about the game.
 
 | Command Arg | Description                  | Type  |
 |-------------|------------------------------|-------|
-| `[game id`  | Get ID from shcedule command | `int` |
+| `[game id]`  | Get ID from shcedule command | `int` |
 
 | Option        | Description                                                                  | Type   | Default | Required? |
 |---------------|------------------------------------------------------------------------------|--------|---------|-----------|
